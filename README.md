@@ -1,70 +1,189 @@
-# Getting Started with Create React App
+# Notes -
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+### props
 
-## Available Scripts
+To access props in class based components -
 
-In the project directory, you can run:
+1. access props by `this.props.name`
 
-### `npm start`
+```
+class User extends Component {
+  render() {
+    return <li className={classes.user}>{this.props.name}</li>;
+  }
+}
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### states
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+to define states in class based components -
 
-### `npm test`
+1. create constructor() method
+2. add super(); so that super() function can call Component class constructor
+3. create state `this.state = {initial_state};`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+to update state -
 
-### `npm run build`
+1. `this.setState({more:'new'});`
+2. can also update new state from old state -
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```
+his.setState((curState) => {
+      return { showUsers: !curState.showUsers };
+    });
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+to use state -
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+1. access state by - `this.state.showUsers`
 
-### `npm run eject`
+```
+class Users extends Component {
+  constructor() {
+    super();
+    this.state = {
+      showUsers: true,
+      more: 'Test',
+    };
+  }
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+  toggleUsersHandler() {
+    // this.state.showUsers = false; // NOT!
+    this.setState((curState) => {
+      return { showUsers: !curState.showUsers };
+    });
+  }
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+  render() {
+    const usersList = (
+      <ul>
+        {this.props.users.map((user) => (
+          <User key={user.id} name={user.name} />
+        ))}
+      </ul>
+    );
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+    return (
+      <div className={classes.users}>
+        <button onClick={this.toggleUsersHandler.bind(this)}>
+          {this.state.showUsers ? 'Hide' : 'Show'} Users
+        </button>
+        {this.state.showUsers && usersList}
+      </div>
+    );
+  }
+}
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Side Effects (useEffect())
 
-## Learn More
+In class based components we mainly use 3 side effects methods -
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+1. componentDidMount() - called once component mounted (was evaluated & rendered)
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```
+componentDidMount() {
+  // Send http request...
+  this.setState({ filteredUsers: this.context.users });
+}
+```
 
-### Code Splitting
+2. componentDidUpdate() - called once component updated (was evaluated & rendered)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+```
+componentDidUpdate(prevProps, prevState) {
+  if (prevState.searchTerm !== this.state.searchTerm) {
+    this.setState({
+      filteredUsers: this.context.users.filter((user) =>
+        user.name.includes(this.state.searchTerm)
+      ),
+    });
+  }
+}
+```
 
-### Analyzing the Bundle Size
+3. componentWillUnmount() - called right before component is unmounted (removed from DOM)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+```
+componentWillUnmount() {
+  console.log('User will unmount!');
+}
+```
 
-### Making a Progressive Web App
+### Context
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+To use context in class based component -
 
-### Advanced Configuration
+1. Create context -
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+```
+const UsersContext = React.createContext({
+    users: []
+});
+```
 
-### Deployment
+2. Provide value -
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+```
+import UsersContext from './store/users-context';
+function App() {
+    return (
+    <UsersContext.Provider value={usersContext}>
+        <UserFinder />
+    </UsersContext.Provider>
+    );
+}
+```
 
-### `npm run build` fails to minify
+3. consume value -
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```
+import UsersContext from '../store/users-context';
+class UserFinder extends Component {
+  static contextType = UsersContext; // consumer
+
+  componentDidMount() {
+    // Send http request...
+    this.setState({ filteredUsers: this.context.users }); // value
+  }
+
+  render() {
+    return (
+      ...
+    );
+  }
+}
+```
+
+remember - class based component can only work with one consumer.
+
+### Error Boundaries
+
+Error Boundaries works exactly as try...catch but on react.
+
+to create Error Boundaries -
+
+1. Create a class based component with `componentDidCatch()` method
+
+componentDidCatch() catches all thrown errors and prevent our application from crashing.
+
+```
+class ErrorBoundary extends Component {
+  constructor() {
+    super();
+    this.state = { hasError: false };
+  }
+
+  componentDidCatch(error) {
+    console.log(error);
+    this.setState({ hasError: true });
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <p>Something went wrong!</p>;
+    }
+    return this.props.children;
+  }
+}
+```
